@@ -1,0 +1,44 @@
+# Add patterns to ignore here, one per line
+# Example:
+# *.log
+# tmp/
+**/*.log
+tmp/
+data/conversations.json
+src/output/
+output/
+src/webhook/
+tests/
+register.js
+**/register.js
+.env
+.DS_store
+node_modules/
+package-lock.json
+src/config/
+modules/cli
+src/cli.js
+src/data
+.git
+logs/
+src/logs
+repomix-output.*
+repomix-config.js
+.repomixignore
+.gitignore
+tree.md
+src-old/
+tree-maker/
+generateStructure.js
+testUtils.js
+output/cleanedConversations.json
+output/reports/invalid_conversations.json
+data/schemes/memeorySchema.json
+.repomixignore
+yarn.lock
+~.eslintrc.js
+data/data.json
+data/data2.*
+test/*
+.zed/*
+try.json
