@@ -1,8 +1,15 @@
 # CLAUDE.md — AI Assistant Guide for messages-exporter
 
+> **Work tracking:** See [`TODO.md`](./TODO.md) for the full epic/task breakdown
+> and current progress. Update it as tasks are completed.
+
 ## Project Overview
 
-`messages-exporter` (published as `forever-chat-imessage-export`) is a Node.js CLI tool that reads Apple iMessage/SMS data from iOS SQLite backup databases and converts it to a standardized JSON format compatible with the `forever-chat-format` schema. It supports iOS 5 (Madrid format) through iOS 10+.
+`messages-exporter` is a Node.js CLI tool that reads Apple iMessage/SMS data
+from iOS SQLite backup databases (`chat.db`) and converts it to a standardised
+JSON format for downstream analysis. It supports iOS 6 through iOS 17+ and
+macOS direct access (`~/Library/Messages/chat.db`). iOS ≤ 5 support has been
+removed.
 
 ---
 
