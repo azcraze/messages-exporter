@@ -1,6 +1,6 @@
 // src/run.js
 
-const { readJsonFile } = require("./modules/utils/fileIO");
+const { readJsonFile } = require("./utils/fileIO");
 const { format } = require("date-fns");
 
 // Import modules
@@ -23,10 +23,10 @@ const { getHighCharMessages } = require("./modules/highCharMessages");
 const {
   filterGroupedConversations,
 } = require("./modules/filterLargeConversations");
-const { countItemsInOutputFiles } = require("./modules/utils/countOutputItems");
+const { countItemsInOutputFiles } = require("./utils/countOutputItems");
 const {
   generateConversationCounts,
-} = require("./modules/utils/getConversationSummary");
+} = require("./utils/getConversationSummary");
 const fs = require("fs");
 
 function saveJSON(data, filename) {
@@ -54,9 +54,9 @@ async function run() {
     const messagesByDate = {};
     simplifiedMessages.forEach((msg, index) => {
       // Parse timestamp
-      const dateObj = new Date(msg.timestamp);
+      const dateObj = new Date(msg.date);
       if (isNaN(dateObj.getTime())) {
-        console.warn("Invalid timestamp in message:", msg);
+        console.warn("Invalid date in message:", msg);
         return;
       }
 
@@ -69,7 +69,7 @@ async function run() {
       // Collect message info for grouping
       messagesByDate[dateStr].push({
         from: msg.sender,
-        dateTime: msg.timestamp,
+        date: msg.date,
         message_text: msg.message_text,
         attachments: msg.attachments,
       });

@@ -15,9 +15,9 @@ SELECT
 
   (SELECT c.account_login FROM chat as c WHERE c.rowid = (SELECT chat_id FROM chat_message_join WHERE chat_message_join.message_id = m.rowid)) as account_login,
 
-  (SELECT GROUP_CONCAT(id, "|*--*|") FROM handle as h2
-    INNER JOIN chat_message_join AS cmj2 ON h2.rowid = chj2.handle_id
-    INNER JOIN chat_handle_join AS chj2 ON cmj2.chat_id = chj2.chat_id
+  (SELECT GROUP_CONCAT(h2.id, "|*--*|") FROM handle as h2
+    INNER JOIN chat_handle_join AS chj2 ON h2.rowid = chj2.handle_id
+    INNER JOIN chat_message_join AS cmj2 ON chj2.chat_id = cmj2.chat_id
     WHERE cmj2.message_id = m.rowid) AS participants,
 
   is_from_me,

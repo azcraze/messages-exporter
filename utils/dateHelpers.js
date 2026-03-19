@@ -1,5 +1,5 @@
 // src/utils/dateHelpers.js
-const { parseISO, isValid, startOfDay, format } = require('date-fns');
+const { parseISO, isValid, isAfter, isBefore, startOfDay, format } = require('date-fns');
 
 function parseAndValidateDate(dateStr) {
   const date = parseISO(dateStr);
@@ -9,6 +9,8 @@ function parseAndValidateDate(dateStr) {
 module.exports = {
   parseISO,
   isValid,
+  isAfter,
+  isBefore,
   startOfDay,
   format,
   parseAndValidateDate

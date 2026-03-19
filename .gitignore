@@ -17,4 +17,3 @@ queries/ios5_sms.sql
 queries/ios9.sql
 queries/ios_imessage.sql
 lib/load-from-madrid-ios.js
-lib/debug-log.js

@@ -16,7 +16,7 @@ function groupMessagesByInactivity(messages, dateStr, gapHours = 3) {
   // Map messages and parse dateTime
   const msgsWithDate = messages
     .map((msg) => {
-      const dateObj = new Date(msg.dateTime);
+      const dateObj = new Date(msg.date);
       return {
         ...msg,
         dateObj,

@@ -8,10 +8,7 @@
   var expandHomeDir = require("expand-home-dir");
   var getVersion = require("./lib/get-version");
   var loadFromModernOSX = require("./lib/load-from-modern-osx");
-  var loadFromMadridiOS = require("./lib/load-from-madrid-ios");
   var openDB = require("./lib/open-db");
-  var prettyoutput = require("prettyoutput");
-  var { prepare } = require("forever-chat-format");
   var bfj = require("bfj");
 
   let exporter = {
@@ -41,18 +38,13 @@
                 .then(function (version) {
                   logger.log("Found database version " + version);
                   if (version && version > 0) {
-                    if (version <= 5) {
-                      return loadFromMadridiOS(db, version, options);
-                    } else {
-                      return loadFromModernOSX(db, version, options);
-                    }
+                    return loadFromModernOSX(db, version, options);
                   } else {
                     reject("Couldn't open selected database");
                   }
                 })
                 .then((messages) => {
-                  let results = prepare(messages);
-                  resolve(results);
+                  resolve(messages);
                 })
                 .finally(() => {
                   db.close();
@@ -103,7 +95,6 @@
         "-p, --phone [value]",
         "Only return records to/from number",
       )
-      .option("-t, --test", "Only test the records")
       .option("-w, --save [value]", "write to file")
       .parse(process.argv);
 
@@ -117,7 +108,6 @@
       console.log(`only getting message ids ${options.ids}`);
     if (options.phone)
       console.log(`only getting to/from ${options.phone}`);
-    if (options.test) console.log(`only testing entires`);
     if (options.save)
       console.log(
         `writing to ${path.join(__dirname, "data.json").toString()}`,
@@ -128,34 +118,18 @@
     exporter
       .importData(expandHomeDir(filePath), options)
       .then((data) => {
-        if (options.test) {
-          console.log(prettyoutput(data.validations, { maxDepth: 7 }));
-          if (options.save) {
-            bfj
-              .write(
-                `${path.join(__dirname, "validations.json").toString()}`,
-                data.validations,
-                { space: 4 },
-              )
-              .then(() => {
-                console.log("donnnne");
-              })
-              .catch((e) => {
-                console.log(e);
-              });
-          }
-        } else if (options.save) {
-          let filePath = path.join(__dirname, "data.json").toString();
+        if (options.save) {
+          let outPath = path.join(__dirname, "data", "data.json").toString();
           bfj
-            .write(filePath, data, { space: 4 })
+            .write(outPath, data, { space: 4 })
             .then(() => {
-              console.log("donnnne");
+              console.log(`Saved ${data.length} messages to ${outPath}`);
             })
             .catch((e) => {
-              console.log(e);
+              console.error("Failed to write output:", e);
             });
         } else {
-          console.log("DONEEEEE!");
+          console.log(`Imported ${data.length} messages.`);
         }
       });
   }
