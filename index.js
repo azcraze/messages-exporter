@@ -108,6 +108,14 @@
         "--pattern [value]",
         "Regex pattern filter applied after import (case-insensitive)",
       )
+      .option(
+        "-r, --report [value]",
+        "Generate report: summary|words|participants|timeline|sentiment|entities|all",
+      )
+      .option(
+        "--format [value]",
+        "Report output format: json|txt|md (default: json)",
+      )
       .parse(process.argv);
 
     if (options.debug) console.log("- debugging on");
@@ -165,6 +173,85 @@
         } else {
           console.log(`Imported ${data.length} messages.`);
         }
+
+        // Report generation (--report / --format)
+        if (options.report) {
+          generateReports(data, options);
+        }
       });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Report generation helper
+  // ---------------------------------------------------------------------------
+  function generateReports(messages, options) {
+    var fmtArg   = (options.format || 'json').toLowerCase();
+    var reportArg= (options.report === true ? 'all' : options.report || 'summary').toLowerCase();
+
+    var REPORT_MAP = {
+      summary:      require('./reports/summary-report'),
+      words:        require('./reports/word-frequency-report'),
+      participants: require('./reports/participant-report'),
+      timeline:     require('./reports/timeline-report'),
+      sentiment:    require('./reports/sentiment-report'),
+      entities:     require('./reports/entity-report'),
+    };
+
+    var REPORTER_MAP = {
+      json: require('./lib/reporters/json-reporter'),
+      txt:  require('./lib/reporters/text-reporter'),
+      md:   require('./lib/reporters/markdown-reporter'),
+    };
+
+    var reporter = REPORTER_MAP[fmtArg] || REPORTER_MAP.json;
+    var ext      = fmtArg === 'md' ? 'md' : (fmtArg === 'txt' ? 'txt' : 'json');
+
+    var toRun = reportArg === 'all' ? Object.keys(REPORT_MAP) : [reportArg];
+    toRun = toRun.filter(function(r) { return REPORT_MAP[r]; });
+
+    if (toRun.length === 0) {
+      console.error('Unknown report type: ' + reportArg + '. Valid: ' + Object.keys(REPORT_MAP).join(', ') + ', all');
+      return;
+    }
+
+    // Ensure output/reports/ directory exists
+    var outDir = path.join(__dirname, 'output', 'reports');
+    if (!fs.existsSync(path.join(__dirname, 'output'))) fs.mkdirSync(path.join(__dirname, 'output'));
+    if (!fs.existsSync(outDir)) fs.mkdirSync(outDir);
+
+    var timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+
+    // Build vol meta once (shared across all reports)
+    var volMeta = null;
+    try {
+      var { messageVolume } = require('./modules/stats/messageVolume');
+      var vol = messageVolume(messages);
+      volMeta = {
+        message_count: messages.length,
+        date_range: vol.dateRange ? { first: vol.dateRange.first, last: vol.dateRange.last } : null,
+      };
+    } catch (e) { /* non-fatal */ }
+
+    toRun.forEach(function(name) {
+      try {
+        var report = REPORT_MAP[name].build(messages);
+        var meta   = Object.assign({ title: name + ' report' }, volMeta);
+        var output;
+
+        if (fmtArg === 'json') {
+          output = reporter.render(report.data, meta);
+        } else {
+          // text and markdown reporters take sections + meta
+          output = reporter.render(report.sections, meta);
+        }
+
+        var filename = name + '-' + timestamp + '.' + ext;
+        var outPath  = path.join(outDir, filename);
+        fs.writeFileSync(outPath, output, 'utf8');
+        console.log('Report written: ' + outPath);
+      } catch (e) {
+        console.error('Failed to generate ' + name + ' report:', e.message);
+      }
+    });
   }
 })();
