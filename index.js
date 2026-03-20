@@ -96,6 +96,18 @@
         "Only return records to/from number",
       )
       .option("-w, --save [value]", "write to file")
+      .option(
+        "-q, --query [value]",
+        "Exact text filter applied after import (case-insensitive)",
+      )
+      .option(
+        "--fuzzy [value]",
+        "Fuzzy text search applied after import",
+      )
+      .option(
+        "--pattern [value]",
+        "Regex pattern filter applied after import (case-insensitive)",
+      )
       .parse(process.argv);
 
     if (options.debug) console.log("- debugging on");
@@ -117,6 +129,28 @@
 
     exporter
       .importData(expandHomeDir(filePath), options)
+      .then((data) => {
+        // Post-import query filtering (--query / --fuzzy / --pattern)
+        var hasPostFilter = options.query || options.fuzzy || options.pattern;
+        if (hasPostFilter) {
+          var QueryEngine = require('./lib/query-engine');
+          var qe = new QueryEngine(data);
+          if (options.query)   qe.search(options.query);
+          if (options.pattern) qe.pattern(options.pattern);
+
+          if (options.fuzzy) {
+            qe.fuzzy(options.fuzzy);
+            return qe.runAsync().then(function(filtered) {
+              console.log('Filtered to ' + filtered.length + ' messages.');
+              return filtered;
+            });
+          }
+
+          data = qe.run();
+          console.log('Filtered to ' + data.length + ' messages.');
+        }
+        return data;
+      })
       .then((data) => {
         if (options.save) {
           let outPath = path.join(__dirname, "data", "data.json").toString();
