@@ -59,7 +59,7 @@
 
 ---
 
-## Epic 4 — NLP Infrastructure ⬜
+## Epic 4 — NLP Infrastructure ✅
 
 > Build the natural-language analysis layer that all higher-level features
 > depend on. Keep each module single-purpose and composable.
@@ -69,16 +69,16 @@
 
 | # | Task | Status |
 |---|------|--------|
-| 4.1 | Add `natural`, `compromise`, `fuse.js` to `package.json` | ⬜ |
-| 4.2 | Create `lib/nlp-engine.js` — initialises and exports configured NLP tools | ⬜ |
-| 4.3 | Create `modules/nlp/tokenizer.js` — normalise, lowercase, remove punctuation, return token array | ⬜ |
-| 4.4 | Create `modules/nlp/wordFrequency.js` — token → count map, sorted top-N list, stop-word filter | ⬜ |
-| 4.5 | Create `modules/nlp/phraseExtractor.js` — bigram + trigram frequency, returns top-N phrases | ⬜ |
-| 4.6 | Create `modules/nlp/posAnalysis.js` — POS distribution per message set via `compromise` | ⬜ |
-| 4.7 | Create `modules/nlp/entityExtractor.js` — people / places / organisations via `compromise` | ⬜ |
-| 4.8 | Create `modules/nlp/sentimentAnalysis.js` — AFINN score per message, aggregate per day/participant | ⬜ |
-| 4.9 | Create `modules/nlp/patternFinder.js` — regex + keyword scan, returns matching messages with context | ⬜ |
-| 4.10 | Create `modules/nlp/fuzzySearch.js` — `fuse.js` index over `message_text`, returns ranked results | ⬜ |
+| 4.1 | Add `natural`, `compromise`, `fuse.js` to `package.json` | ✅ |
+| 4.2 | Create `lib/nlp-engine.js` — initialises and exports configured NLP tools | ✅ |
+| 4.3 | Create `modules/nlp/tokenizer.js` — normalise, lowercase, remove punctuation, return token array | ✅ |
+| 4.4 | Create `modules/nlp/wordFrequency.js` — token → count map, sorted top-N list, stop-word filter | ✅ |
+| 4.5 | Create `modules/nlp/phraseExtractor.js` — bigram + trigram frequency, returns top-N phrases | ✅ |
+| 4.6 | Create `modules/nlp/posAnalysis.js` — POS distribution per message set via `compromise` | ✅ |
+| 4.7 | Create `modules/nlp/entityExtractor.js` — people / places / organisations via `compromise` | ✅ |
+| 4.8 | Create `modules/nlp/sentimentAnalysis.js` — AFINN score per message, aggregate per day/participant | ✅ |
+| 4.9 | Create `modules/nlp/patternFinder.js` — regex + keyword scan, returns matching messages with context | ✅ |
+| 4.10 | Create `modules/nlp/fuzzySearch.js` — `fuse.js` index over `message_text`, returns ranked results | ✅ |
 
 ---
 
