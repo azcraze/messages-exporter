@@ -41,21 +41,21 @@
 
 ---
 
-## Epic 3 — Pipeline Unification & Final Cleanup ⬜
+## Epic 3 — Pipeline Unification & Final Cleanup ✅
 
 > Consolidate the dual pipeline (main.js / run.js), remove broken files,
 > and leave exactly one canonical path from DB → output.
 
 | # | Task | Status |
 |---|------|--------|
-| 3.1 | Delete `generate-examples.js` (hardcoded paths to non-existent directory) | ⬜ |
-| 3.2 | Remove stale iOS 5 SQL comment block from top of `lib/converter.js` | ⬜ |
-| 3.3 | Extract shared `saveJSON` / `ensureOutputDir` into `utils/fileIO.js` | ⬜ |
-| 3.4 | Create `lib/pipeline.js` — ordered list of transform steps, returns results map | ⬜ |
-| 3.5 | Refactor `run.js` to use `lib/pipeline.js` (reads `data/data.json` → output/) | ⬜ |
-| 3.6 | Refactor `main.js` to use `lib/pipeline.js` (reads live DB → output/) | ⬜ |
-| 3.7 | Add `npm run analyze` script pointing at `main.js` with `system` path | ⬜ |
-| 3.8 | Verify `npm install` resolves `bplist-parser` and all existing deps cleanly | ⬜ |
+| 3.1 | Delete `generate-examples.js` (hardcoded paths to non-existent directory) | ✅ |
+| 3.2 | Remove stale iOS 5 SQL comment block from top of `lib/converter.js` | ✅ |
+| 3.3 | Extract shared `saveJSON` / `ensureOutputDir` into `utils/fileIO.js` | ✅ |
+| 3.4 | Create `lib/pipeline.js` — ordered list of transform steps, returns results map | ✅ |
+| 3.5 | Refactor `run.js` to use `lib/pipeline.js` (reads `data/data.json` → output/) | ✅ |
+| 3.6 | Refactor `main.js` to use `lib/pipeline.js` (reads live DB → output/) | ✅ |
+| 3.7 | Add `npm run analyze` script pointing at `main.js` with `system` path | ✅ |
+| 3.8 | Verify `npm install` resolves `bplist-parser` and all existing deps cleanly | ✅ |
 
 ---
 
