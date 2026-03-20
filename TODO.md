@@ -101,21 +101,21 @@
 
 ---
 
-## Epic 6 — Query Interface ⬜
+## Epic 6 — Query Interface ✅
 
 > A chainable query layer that sits between raw messages and analysis/reports.
 > Exposed via `lib/query-engine.js` and wired into the CLI.
 
 | # | Task | Status |
 |---|------|--------|
-| 6.1 | Create `lib/query-engine.js` — builder pattern: `.filter(fn).limit(n).run()` | ⬜ |
-| 6.2 | Add date-range filter (reuse `modules/messageFiltering.js`) | ⬜ |
-| 6.3 | Add participant filter | ⬜ |
-| 6.4 | Add exact-text search filter | ⬜ |
-| 6.5 | Add fuzzy-text search filter (delegates to `modules/nlp/fuzzySearch.js`) | ⬜ |
-| 6.6 | Add regex/pattern search filter | ⬜ |
-| 6.7 | Wire `--query` / `--fuzzy` / `--pattern` flags into `index.js` CLI | ⬜ |
-| 6.8 | Update `lib/load-query.js` search filter to also handle `attributedBody`-only messages | ⬜ |
+| 6.1 | Create `lib/query-engine.js` — builder pattern: `.filter(fn).limit(n).run()` | ✅ |
+| 6.2 | Add date-range filter (reuse `modules/messageFiltering.js`) | ✅ |
+| 6.3 | Add participant filter | ✅ |
+| 6.4 | Add exact-text search filter | ✅ |
+| 6.5 | Add fuzzy-text search filter (delegates to `modules/nlp/fuzzySearch.js`) | ✅ |
+| 6.6 | Add regex/pattern search filter | ✅ |
+| 6.7 | Wire `--query` / `--fuzzy` / `--pattern` flags into `index.js` CLI | ✅ |
+| 6.8 | Update `lib/load-query.js` search filter to also handle `attributedBody`-only messages | ✅ |
 
 ---
 
