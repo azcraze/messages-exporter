@@ -1,140 +1,58 @@
-// src/run.js
+/**
+ * run.js
+ *
+ * Process-from-file entry point.
+ * Reads a previously saved data/data.json, runs the full pipeline,
+ * and writes all outputs to ./output/.
+ *
+ * Usage:  node run.js [path/to/data.json]
+ */
 
-const { readJsonFile } = require("./utils/fileIO");
-const { format } = require("date-fns");
-
-// Import modules
-const {
-  getSimplifiedMessages,
-} = require("./modules/getSimplifiedMessages");
-const {
-  countMessagesPerDay,
-} = require("./modules/countMessagesPerDay");
-const {
-  filterMessagesByParticipant,
-  filterMessagesByDateRange,
-  filterMessagesByText,
-  getMessagesWithAttachments,
-} = require("./modules/messageFiltering");
-const {
-  groupMessagesByInactivity,
-} = require("./modules/groupConversationsByTime");
-const { getHighCharMessages } = require("./modules/highCharMessages");
-const {
-  filterGroupedConversations,
-} = require("./modules/filterLargeConversations");
-const { countItemsInOutputFiles } = require("./utils/countOutputItems");
-const {
-  generateConversationCounts,
-} = require("./utils/getConversationSummary");
-const fs = require("fs");
-
-function saveJSON(data, filename) {
-  const outputDir = "./output";
-  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
-  fs.writeFileSync(
-    `${outputDir}/${filename}`,
-    JSON.stringify(data, null, 2),
-  );
-}
+const { readJsonFile, saveJSON }    = require('./utils/fileIO');
+const { generateConversationCounts } = require('./utils/getConversationSummary');
+const { countItemsInOutputFiles }   = require('./utils/countOutputItems');
+const { runPipeline }               = require('./lib/pipeline');
 
 async function run() {
+  const inputPath = process.argv[2] || './data/data.json';
+
+  let rawMessages;
   try {
-    // Load raw data
-    const data = readJsonFile("./data/data.json");
-
-    // Simplify messages
-    const simplifiedMessages = getSimplifiedMessages(data);
-    console.log(
-      `Total simplified messages: ${simplifiedMessages.length}`,
-    );
-    saveJSON(simplifiedMessages, "simplified_messages.json");
-
-    // Group messages by date
-    const messagesByDate = {};
-    simplifiedMessages.forEach((msg, index) => {
-      // Parse timestamp
-      const dateObj = new Date(msg.date);
-      if (isNaN(dateObj.getTime())) {
-        console.warn("Invalid date in message:", msg);
-        return;
-      }
-
-      // Format date string
-      const dateStr = format(dateObj, "EEE, MMM dd, yyyy");
-      if (!messagesByDate[dateStr]) {
-        messagesByDate[dateStr] = [];
-      }
-
-      // Collect message info for grouping
-      messagesByDate[dateStr].push({
-        from: msg.sender,
-        date: msg.date,
-        message_text: msg.message_text,
-        attachments: msg.attachments,
-      });
-    });
-
-    // Apply grouping per date
-    const allConversations = [];
-    for (const dateStr in messagesByDate) {
-      console.log(
-        `Grouping conversations for date: ${dateStr} (${messagesByDate[dateStr].length} messages)`,
-      );
-      const group = groupMessagesByInactivity(
-        messagesByDate[dateStr],
-        dateStr,
-      );
-      // Append each conversation with date info
-      group.conversations.forEach((convo) => {
-        allConversations.push({
-          date: dateStr,
-          conversation_msgs: convo.conversationMsgs,
-        });
-      });
-    }
-
-    // Save all grouped conversations
-    saveJSON(allConversations, "conversations.json");
-    console.log("All conversations saved.");
-
-    // Filter for large conversations
-    const largeConversations = filterGroupedConversations(
-      allConversations,
-      15,
-    );
-    saveJSON(largeConversations, "largeConversations.json");
-    console.log("Large conversations (>15 msgs) saved.");
-
-    // Count messages per day
-    const dailyCounts = countMessagesPerDay(simplifiedMessages);
-    saveJSON(dailyCounts, "daily_counts.json");
-    console.log("Daily message counts saved.");
-
-    // Extract long messages (>=300 chars)
-    const longMessages = getHighCharMessages(simplifiedMessages);
-    console.log(
-      `Total long messages (>=300 chars): ${longMessages.length}`,
-    );
-    saveJSON(longMessages, "long_char_messages.json");
-
-    const outputDir = "./output"; // or your output folder path
-    const counts = countItemsInOutputFiles(outputDir);
-    console.log("Item counts per file:", counts);
-    // Optional filters (uncomment and customize as needed)
-    // const filteredByParticipant = filterMessagesByParticipant(simplifiedMessages, '+1234567890');
-    // saveJSON(filteredByParticipant, 'filtered_by_participant.json');
-
-    // Provide the path to your saved conversations
-    const inputFile = "./output/conversations.json";
-    const outputFile = "./output/conversation_summary.json";
-
-    generateConversationCounts(inputFile, outputFile);
-
-    console.log("Processing complete. Files saved in ./output/");
-  } catch (err) {
-    console.error("Error during processing:", err);
+    rawMessages = readJsonFile(inputPath);
+  } catch (e) {
+    console.error(`Could not read ${inputPath}:`, e.message);
+    process.exit(1);
   }
+
+  console.log(`Loaded ${rawMessages.length} raw messages from ${inputPath}`);
+
+  const results = runPipeline(rawMessages);
+
+  saveJSON(results.simplified,          'simplified_messages.json');
+  console.log(`Simplified messages:       ${results.simplified.length}`);
+
+  saveJSON(results.conversations,        'conversations.json');
+  console.log(`Conversations:             ${results.conversations.length}`);
+
+  saveJSON(results.dailyCounts,          'daily_counts.json');
+  console.log(`Days with messages:        ${results.dailyCounts.length}`);
+
+  saveJSON(results.largeConversations,   'large_conversations.json');
+  console.log(`Large conversations (≥15): ${results.largeConversations.length}`);
+
+  saveJSON(results.longMessages,         'long_char_messages.json');
+  console.log(`Long messages (≥300 ch):  ${results.longMessages.length}`);
+
+  generateConversationCounts('./output/conversations.json', './output/conversation_summary.json');
+
+  const counts = countItemsInOutputFiles('./output');
+  console.log('\nOutput file item counts:');
+  Object.keys(counts).forEach(function(f) { console.log(`  ${f}: ${counts[f]}`); });
+
+  console.log('\nProcessing complete. Files saved to ./output/');
 }
 
-run();
+run().catch(function(err) {
+  console.error('Fatal error:', err);
+  process.exit(1);
+});

@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "import": "node index.js",
-    "run": "node run.js"
+    "analyze": "node main.js system",
+    "run": "node run.js",
+    "test": "mocha --timeout 90000 'test/**/*.test.js'"
   },
   "keywords": [
     "imessage",
