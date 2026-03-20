@@ -119,7 +119,7 @@
 
 ---
 
-## Epic 7 — Report Generation ⬜
+## Epic 7 — Report Generation ✅
 
 > Three output formats: JSON (machine-readable), TXT (plain readable), and
 > Markdown (structured, hierarchy-driven, human-presentable).
@@ -135,18 +135,18 @@
 
 | # | Task | Status |
 |---|------|--------|
-| 7.1 | Create `lib/reporters/base-reporter.js` — shared helpers: `formatDate`, `formatNumber`, `table`, `ranked-list` | ⬜ |
-| 7.2 | Create `lib/reporters/json-reporter.js` — wraps data with metadata envelope (generated_at, message_count, date_range) | ⬜ |
-| 7.3 | Create `lib/reporters/text-reporter.js` — fixed-width text, aligned columns | ⬜ |
-| 7.4 | Create `lib/reporters/markdown-reporter.js` — full Markdown output following design rules above | ⬜ |
-| 7.5 | Create `reports/summary-report.js` — total messages, date span, participant list, top day | ⬜ |
-| 7.6 | Create `reports/word-frequency-report.js` — top-50 words, top-20 phrases, stop-word-filtered | ⬜ |
-| 7.7 | Create `reports/participant-report.js` — per-participant breakdown (volume, ratio, response time) | ⬜ |
-| 7.8 | Create `reports/timeline-report.js` — monthly volume chart (ASCII sparkline in TXT/MD), daily heatmap data | ⬜ |
-| 7.9 | Create `reports/sentiment-report.js` — overall tone, per-participant sentiment, trend over time | ⬜ |
-| 7.10 | Create `reports/entity-report.js` — named people/places mentioned, frequency | ⬜ |
-| 7.11 | Add `--report <type>` and `--format <json\|txt\|md>` flags to CLI | ⬜ |
-| 7.12 | Write output to `./output/reports/` with timestamped filenames | ⬜ |
+| 7.1 | Create `lib/reporters/base-reporter.js` — shared helpers: `formatDate`, `formatNumber`, `table`, `ranked-list` | ✅ |
+| 7.2 | Create `lib/reporters/json-reporter.js` — wraps data with metadata envelope (generated_at, message_count, date_range) | ✅ |
+| 7.3 | Create `lib/reporters/text-reporter.js` — fixed-width text, aligned columns | ✅ |
+| 7.4 | Create `lib/reporters/markdown-reporter.js` — full Markdown output following design rules above | ✅ |
+| 7.5 | Create `reports/summary-report.js` — total messages, date span, participant list, top day | ✅ |
+| 7.6 | Create `reports/word-frequency-report.js` — top-50 words, top-20 phrases, stop-word-filtered | ✅ |
+| 7.7 | Create `reports/participant-report.js` — per-participant breakdown (volume, ratio, response time) | ✅ |
+| 7.8 | Create `reports/timeline-report.js` — monthly volume chart (ASCII sparkline in TXT/MD), daily heatmap data | ✅ |
+| 7.9 | Create `reports/sentiment-report.js` — overall tone, per-participant sentiment, trend over time | ✅ |
+| 7.10 | Create `reports/entity-report.js` — named people/places mentioned, frequency | ✅ |
+| 7.11 | Add `--report <type>` and `--format <json\|txt\|md>` flags to CLI | ✅ |
+| 7.12 | Write output to `./output/reports/` with timestamped filenames | ✅ |
 
 ---
 
