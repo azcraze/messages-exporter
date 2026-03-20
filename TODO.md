@@ -150,22 +150,22 @@
 
 ---
 
-## Epic 8 — Testing ⬜
+## Epic 8 — Testing ✅
 
 > Mocha + Chai + chai-as-promised. No Jest. Tests live in `test/`.
 > Fixtures are static JSON files in `test/fixtures/`.
 
 | # | Task | Status |
 |---|------|--------|
-| 8.1 | Create `test/fixtures/` with mock raw DB rows and simplified messages | ⬜ |
-| 8.2 | `test/utils/messageCleaner.test.js` — field defaults, UUID assignment, type coercion | ⬜ |
-| 8.3 | `test/lib/parse-attributed-body.test.js` — known bplist buffers → expected strings, null/corrupt input | ⬜ |
-| 8.4 | `test/lib/converter.test.js` — formatAddress, internalIdentifier, buildPayload with fixture rows | ⬜ |
-| 8.5 | `test/modules/nlp/wordFrequency.test.js` — frequency counts, stop-word filtering, top-N | ⬜ |
-| 8.6 | `test/modules/nlp/phraseExtractor.test.js` — bigram/trigram extraction from known sentences | ⬜ |
-| 8.7 | `test/modules/stats/*.test.js` — one test file per stats module, known-input assertions | ⬜ |
-| 8.8 | `test/lib/query-engine.test.js` — chained filters return correct subsets | ⬜ |
-| 8.9 | `test/reporters/*.test.js` — each reporter produces expected structure/keys | ⬜ |
+| 8.1 | Create `test/fixtures/` with mock raw DB rows and simplified messages | ✅ |
+| 8.2 | `test/utils/messageCleaner.test.js` — field defaults, UUID assignment, type coercion | ✅ |
+| 8.3 | `test/lib/parse-attributed-body.test.js` — known bplist buffers → expected strings, null/corrupt input | ✅ |
+| 8.4 | `test/lib/converter.test.js` — formatAddress, internalIdentifier, buildPayload with fixture rows | ✅ |
+| 8.5 | `test/modules/nlp/wordFrequency.test.js` — frequency counts, stop-word filtering, top-N | ✅ |
+| 8.6 | `test/modules/nlp/phraseExtractor.test.js` — bigram/trigram extraction from known sentences | ✅ |
+| 8.7 | `test/modules/stats/*.test.js` — one test file per stats module, known-input assertions | ✅ |
+| 8.8 | `test/lib/query-engine.test.js` — chained filters return correct subsets | ✅ |
+| 8.9 | `test/reporters/*.test.js` — each reporter produces expected structure/keys | ✅ |
 
 ---
 
