@@ -82,22 +82,22 @@
 
 ---
 
-## Epic 5 — Statistical Analysis ⬜
+## Epic 5 — Statistical Analysis ✅
 
 > Pure-data modules; no NLP required. Each takes a simplified message array
 > and returns a plain JS object suitable for JSON serialisation.
 
 | # | Task | Status |
 |---|------|--------|
-| 5.1 | Create `modules/stats/messageVolume.js` — counts by day / week / month / year | ⬜ |
-| 5.2 | Create `modules/stats/timeOfDay.js` — hourly distribution (0–23), peak hour | ⬜ |
-| 5.3 | Create `modules/stats/dayOfWeek.js` — Mon–Sun distribution, most active day | ⬜ |
-| 5.4 | Create `modules/stats/participantStats.js` — message count, send ratio, first/last seen per participant | ⬜ |
-| 5.5 | Create `modules/stats/responseTime.js` — median + mean response time per participant pair | ⬜ |
-| 5.6 | Create `modules/stats/attachmentStats.js` — count + breakdown by MIME type | ⬜ |
-| 5.7 | Create `modules/stats/conversationStats.js` — distribution of conversation lengths, median size | ⬜ |
-| 5.8 | Create `modules/stats/emojiStats.js` — extract all emoji, frequency ranking | ⬜ |
-| 5.9 | Create `modules/stats/streaks.js` — longest consecutive active days, longest gap | ⬜ |
+| 5.1 | Create `modules/stats/messageVolume.js` — counts by day / week / month / year | ✅ |
+| 5.2 | Create `modules/stats/timeOfDay.js` — hourly distribution (0–23), peak hour | ✅ |
+| 5.3 | Create `modules/stats/dayOfWeek.js` — Mon–Sun distribution, most active day | ✅ |
+| 5.4 | Create `modules/stats/participantStats.js` — message count, send ratio, first/last seen per participant | ✅ |
+| 5.5 | Create `modules/stats/responseTime.js` — median + mean response time per participant pair | ✅ |
+| 5.6 | Create `modules/stats/attachmentStats.js` — count + breakdown by MIME type | ✅ |
+| 5.7 | Create `modules/stats/conversationStats.js` — distribution of conversation lengths, median size | ✅ |
+| 5.8 | Create `modules/stats/emojiStats.js` — extract all emoji, frequency ranking | ✅ |
+| 5.9 | Create `modules/stats/streaks.js` — longest consecutive active days, longest gap | ✅ |
 
 ---
 
