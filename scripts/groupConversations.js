@@ -21,58 +21,33 @@ const fs = require("fs");
     return;
   }
 
-  const messagesByDate = {};
+  // Map to expected shape — use msg.date (not msg.timestamp which doesn't exist)
+  // Pass the full stream at once so conversations spanning midnight are not split
+  const msgs = simplifiedMessages.map((msg) => ({
+    from: msg.sender,
+    date: msg.date,
+    message_text: msg.message_text,
+    attachments: msg.attachments,
+  }));
 
-  // Organize messages into date buckets
-  console.log("Organizing messages into date buckets...");
-  simplifiedMessages.forEach((msg, index) => {
-    const dateObj = new Date(msg.timestamp);
-    if (isNaN(dateObj.getTime())) {
-      console.warn("Invalid timestamp:", msg);
-      return;
-    }
-    const dateStr = format(dateObj, "EEE, MMM dd, yyyy");
-    if (!messagesByDate[dateStr]) {
-      messagesByDate[dateStr] = [];
-    }
-    messagesByDate[dateStr].push({
-      from: msg.sender,
-      dateTime: msg.timestamp,
-      message_text: msg.message_text,
-      attachments: msg.attachments,
-    });
+  const grouped = groupMessagesByInactivity(msgs, null);
+
+  const allConversations = grouped.conversations.map((convo, index) => {
+    const firstMsg = convo.conversationMsgs[0];
+    const dateStr =
+      firstMsg && firstMsg.date && firstMsg.date !== "Unknown Date"
+        ? format(new Date(firstMsg.date), "EEE, MMM dd, yyyy")
+        : "Unknown Date";
+    return {
+      conversationId: index,
+      date: dateStr,
+      conversationMsgs: convo.conversationMsgs,
+      messageCount: convo.conversationMsgs.length,
+    };
   });
 
-  // Prepare to output all conversations with unique IDs
-  const allConversations = [];
-  let conversationIdCounter = 0; // For unique ID assignment
-
-  for (const dateStr in messagesByDate) {
-    console.log(
-      `Processing date: ${dateStr} (${messagesByDate[dateStr].length} messages)`,
-    );
-    const grouped = groupMessagesByInactivity(
-      messagesByDate[dateStr],
-      dateStr,
-    );
-
-    console.log(
-      `- Found ${grouped.conversations.length} conversations on ${dateStr}`,
-    );
-
-    // Assign a unique ID to each conversation
-    grouped.conversations.forEach((convo) => {
-      allConversations.push({
-        conversationId: conversationIdCounter++, // unique ID
-        date: dateStr,
-        conversationMsgs: convo.conversationMsgs,
-        messageCount: convo.conversationMsgs.length,
-      });
-    });
-  }
-
   // Ensure output directory exists
-  const outputDir = "../output"; // keep your known path
+  const outputDir = "./output";
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
@@ -84,6 +59,6 @@ const fs = require("fs");
   );
 
   console.log(
-    `Saved ${allConversations.length} conversations with IDs to ${outputDir}/conversations.json`,
+    `Saved ${allConversations.length} conversations to ${outputDir}/conversations.json`,
   );
 })();
