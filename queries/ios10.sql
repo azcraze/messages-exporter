@@ -15,9 +15,9 @@ SELECT
 
   (SELECT c.account_login FROM chat as c WHERE c.rowid = (SELECT chat_id FROM chat_message_join WHERE chat_message_join.message_id = m.rowid)) as account_login,
 
-  (SELECT GROUP_CONCAT(id, "|*--*|") FROM handle as h2
-    INNER JOIN chat_message_join AS cmj2 ON h2.rowid = chj2.handle_id
-    INNER JOIN chat_handle_join AS chj2 ON cmj2.chat_id = chj2.chat_id
+  (SELECT GROUP_CONCAT(h2.id, "|*--*|") FROM handle as h2
+    INNER JOIN chat_handle_join AS chj2 ON h2.rowid = chj2.handle_id
+    INNER JOIN chat_message_join AS cmj2 ON chj2.chat_id = cmj2.chat_id
     WHERE cmj2.message_id = m.rowid) AS participants,
 
   is_from_me,
@@ -38,6 +38,7 @@ SELECT
   END AS type,
   m.is_audio_message,
   text as message_text,
+  m.attributedBody,
 
 CASE m.associated_message_type
 	WHEN 1000 THEN "sticker"
@@ -47,6 +48,7 @@ CASE m.associated_message_type
 	WHEN 2003 THEN "laughed"
 	WHEN 2004 THEN "emphasised"
 	WHEN 2005 THEN "questioned"
+	WHEN 2006 THEN "emoji"
 
 	WHEN 3000 THEN "removed loved"
 	WHEN 3001 THEN "removed liked"
@@ -54,24 +56,28 @@ CASE m.associated_message_type
 	WHEN 3003 THEN "removed laughed"
 	WHEN 3004 THEN "removed emphasised"
 	WHEN 3005 THEN "removed questioned"
+	WHEN 3006 THEN "removed emoji"
 
 	ELSE m.associated_message_type
 END AS reaction_type,
 m.associated_message_guid,
 
-  CASE date_read
-    WHEN 0 THEN null
-    ELSE strftime("%Y-%m-%dT%H:%M:%S", DATETIME(date_read +978307200, "unixepoch"))
+  CASE
+    WHEN date_read > 0
+    THEN strftime("%Y-%m-%dT%H:%M:%S", DATETIME(date_read / 1000000000 + 978307200, "unixepoch"))
+    ELSE null
   END AS formatted_date_read,
 
-  CASE date_played
-    WHEN 0 THEN null
-    ELSE strftime("%Y-%m-%dT%H:%M:%S", DATETIME(date_played +978307200, "unixepoch"))
+  CASE
+    WHEN date_played > 0
+    THEN strftime("%Y-%m-%dT%H:%M:%S", DATETIME(date_played / 1000000000 + 978307200, "unixepoch"))
+    ELSE null
   END AS formatted_date_played,
 
-  CASE date_delivered
-    WHEN 0 THEN null
-    ELSE strftime("%Y-%m-%dT%H:%M:%S", DATETIME(date_delivered +978307200, "unixepoch"))
+  CASE
+    WHEN date_delivered > 0
+    THEN strftime("%Y-%m-%dT%H:%M:%S", DATETIME(date_delivered / 1000000000 + 978307200, "unixepoch"))
+    ELSE null
   END AS formatted_date_delivered,
 
   CASE cache_has_attachments
@@ -81,7 +87,10 @@ m.associated_message_guid,
 
   a.mime_type as attachment_mime_type,
 
-  m.service
+  m.service,
+
+  m.reply_to_guid,
+  m.thread_originator_guid
 
 FROM message AS m
 LEFT JOIN message_attachment_join AS maj ON maj.message_id = m.rowid
@@ -93,4 +102,4 @@ LEFT JOIN (SELECT count(*) as participant_count, cmj.chat_id, cmj.message_id as 
     chat_handle_join as chj
     INNER JOIN chat_message_join as cmj on cmj.chat_id = chj.chat_id
     GROUP BY cmj.message_id, cmj.chat_id) as p on p.mid = m.rowid
-WHERE (text is not null or attachment is not null) AND m.service IN ('SMS', 'iMessage')
+WHERE (text is not null or attributedBody is not null or attachment is not null) AND m.service IN ('SMS', 'iMessage')

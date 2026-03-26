@@ -5,7 +5,7 @@ const {
   isAfter,
   isBefore,
   isValid,
-} = require("./utils/dateHelpers");
+} = require("../utils/dateHelpers");
 
 /**
  * Filter messages by participant phone number.
@@ -28,8 +28,8 @@ function filterMessagesByDateRange(messages, startDateStr, endDateStr) {
   const endDate = endDateStr ? parseISO(endDateStr) : null;
 
   return messages.filter((msg) => {
-    if (!msg.timestamp) return false; // use 'timestamp'
-    const msgDate = new Date(msg.timestamp);
+    if (!msg.date) return false;
+    const msgDate = new Date(msg.date);
     if (!isValid(msgDate)) return false;
 
     if (

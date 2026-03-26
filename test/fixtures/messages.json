@@ -1,0 +1,80 @@
+[
+  {
+    "message_text": "Hey, are you coming to dinner?",
+    "date": "2024-01-15T18:30:00",
+    "sender": "+15551234567",
+    "receiver": ["+15559999999"],
+    "participants": ["+15551234567", "+15559999999"],
+    "is_from_me": 0,
+    "service": "iMessage",
+    "attachments": [],
+    "message_segments": [],
+    "sha": null,
+    "associated_sha": null
+  },
+  {
+    "message_text": "Yes! Around 7pm?",
+    "date": "2024-01-15T18:31:00",
+    "sender": "+15559999999",
+    "receiver": ["+15551234567"],
+    "participants": ["+15551234567", "+15559999999"],
+    "is_from_me": 1,
+    "service": "iMessage",
+    "attachments": [],
+    "message_segments": [],
+    "sha": null,
+    "associated_sha": null
+  },
+  {
+    "message_text": "Perfect, see you then!",
+    "date": "2024-01-15T18:32:00",
+    "sender": "+15551234567",
+    "receiver": ["+15559999999"],
+    "participants": ["+15551234567", "+15559999999"],
+    "is_from_me": 0,
+    "service": "iMessage",
+    "attachments": [{ "path": "/photo.jpg", "type": "image/jpeg" }],
+    "message_segments": [],
+    "sha": null,
+    "associated_sha": null
+  },
+  {
+    "message_text": "Great, see you soon! I love this plan",
+    "date": "2024-01-16T09:00:00",
+    "sender": "+15551234567",
+    "receiver": ["+15559999999"],
+    "participants": ["+15551234567", "+15559999999"],
+    "is_from_me": 0,
+    "service": "SMS",
+    "attachments": [],
+    "message_segments": [],
+    "sha": null,
+    "associated_sha": null
+  },
+  {
+    "message_text": "This is terrible news honestly",
+    "date": "2024-01-17T14:00:00",
+    "sender": "+15559999999",
+    "receiver": ["+15551234567"],
+    "participants": ["+15551234567", "+15559999999"],
+    "is_from_me": 1,
+    "service": "iMessage",
+    "attachments": [],
+    "message_segments": [],
+    "sha": null,
+    "associated_sha": null
+  },
+  {
+    "message_text": "Amazing wonderful fantastic day",
+    "date": "2024-01-18T10:00:00",
+    "sender": "+15551234567",
+    "receiver": ["+15559999999"],
+    "participants": ["+15551234567", "+15559999999"],
+    "is_from_me": 0,
+    "service": "iMessage",
+    "attachments": [],
+    "message_segments": [],
+    "sha": null,
+    "associated_sha": null
+  }
+]

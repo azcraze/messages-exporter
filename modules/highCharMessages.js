@@ -1,6 +1,6 @@
 // src/modules/highCharMessages.js
 
-const { format, parseISO } = require("../utils/dateHelpers");
+const { format, isValid } = require("../utils/dateHelpers");
 
 /**
  * Extracts messages >=300 characters with standardized info.
@@ -13,7 +13,7 @@ function getHighCharMessages(messages) {
   return messages
     .filter((msg) => msg.message_text && msg.message_text.length >= 300)
     .map((msg) => {
-      const sender = msg.is_from_me === 1 ? "ASH" : "BRY";
+      const sender = msg.sender || (msg.is_from_me === 1 ? 'me' : 'other');
       const dateObj = msg.date ? new Date(msg.date) : null;
       const dateFormatted =
         dateObj && isValid(dateObj)

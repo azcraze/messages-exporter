@@ -8,10 +8,7 @@
   var expandHomeDir = require("expand-home-dir");
   var getVersion = require("./lib/get-version");
   var loadFromModernOSX = require("./lib/load-from-modern-osx");
-  var loadFromMadridiOS = require("./lib/load-from-madrid-ios");
   var openDB = require("./lib/open-db");
-  var prettyoutput = require("prettyoutput");
-  var { prepare } = require("forever-chat-format");
   var bfj = require("bfj");
 
   let exporter = {
@@ -41,18 +38,13 @@
                 .then(function (version) {
                   logger.log("Found database version " + version);
                   if (version && version > 0) {
-                    if (version <= 5) {
-                      return loadFromMadridiOS(db, version, options);
-                    } else {
-                      return loadFromModernOSX(db, version, options);
-                    }
+                    return loadFromModernOSX(db, version, options);
                   } else {
                     reject("Couldn't open selected database");
                   }
                 })
                 .then((messages) => {
-                  let results = prepare(messages);
-                  resolve(results);
+                  resolve(messages);
                 })
                 .finally(() => {
                   db.close();
@@ -103,8 +95,27 @@
         "-p, --phone [value]",
         "Only return records to/from number",
       )
-      .option("-t, --test", "Only test the records")
       .option("-w, --save [value]", "write to file")
+      .option(
+        "-q, --query [value]",
+        "Exact text filter applied after import (case-insensitive)",
+      )
+      .option(
+        "--fuzzy [value]",
+        "Fuzzy text search applied after import",
+      )
+      .option(
+        "--pattern [value]",
+        "Regex pattern filter applied after import (case-insensitive)",
+      )
+      .option(
+        "-r, --report [value]",
+        "Generate report: summary|words|participants|timeline|sentiment|entities|all",
+      )
+      .option(
+        "--format [value]",
+        "Report output format: json|txt|md (default: json)",
+      )
       .parse(process.argv);
 
     if (options.debug) console.log("- debugging on");
@@ -117,7 +128,6 @@
       console.log(`only getting message ids ${options.ids}`);
     if (options.phone)
       console.log(`only getting to/from ${options.phone}`);
-    if (options.test) console.log(`only testing entires`);
     if (options.save)
       console.log(
         `writing to ${path.join(__dirname, "data.json").toString()}`,
@@ -128,35 +138,120 @@
     exporter
       .importData(expandHomeDir(filePath), options)
       .then((data) => {
-        if (options.test) {
-          console.log(prettyoutput(data.validations, { maxDepth: 7 }));
-          if (options.save) {
-            bfj
-              .write(
-                `${path.join(__dirname, "validations.json").toString()}`,
-                data.validations,
-                { space: 4 },
-              )
-              .then(() => {
-                console.log("donnnne");
-              })
-              .catch((e) => {
-                console.log(e);
-              });
+        // Post-import query filtering (--query / --fuzzy / --pattern)
+        var hasPostFilter = options.query || options.fuzzy || options.pattern;
+        if (hasPostFilter) {
+          var QueryEngine = require('./lib/query-engine');
+          var qe = new QueryEngine(data);
+          if (options.query)   qe.search(options.query);
+          if (options.pattern) qe.pattern(options.pattern);
+
+          if (options.fuzzy) {
+            qe.fuzzy(options.fuzzy);
+            return qe.runAsync().then(function(filtered) {
+              console.log('Filtered to ' + filtered.length + ' messages.');
+              return filtered;
+            });
           }
-        } else if (options.save) {
-          let filePath = path.join(__dirname, "data.json").toString();
+
+          data = qe.run();
+          console.log('Filtered to ' + data.length + ' messages.');
+        }
+        return data;
+      })
+      .then((data) => {
+        if (options.save) {
+          let outPath = path.join(__dirname, "data", "data.json").toString();
           bfj
-            .write(filePath, data, { space: 4 })
+            .write(outPath, data, { space: 4 })
             .then(() => {
-              console.log("donnnne");
+              console.log(`Saved ${data.length} messages to ${outPath}`);
             })
             .catch((e) => {
-              console.log(e);
+              console.error("Failed to write output:", e);
             });
         } else {
-          console.log("DONEEEEE!");
+          console.log(`Imported ${data.length} messages.`);
+        }
+
+        // Report generation (--report / --format)
+        if (options.report) {
+          generateReports(data, options);
         }
       });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Report generation helper
+  // ---------------------------------------------------------------------------
+  function generateReports(messages, options) {
+    var fmtArg   = (options.format || 'json').toLowerCase();
+    var reportArg= (options.report === true ? 'all' : options.report || 'summary').toLowerCase();
+
+    var REPORT_MAP = {
+      summary:      require('./reports/summary-report'),
+      words:        require('./reports/word-frequency-report'),
+      participants: require('./reports/participant-report'),
+      timeline:     require('./reports/timeline-report'),
+      sentiment:    require('./reports/sentiment-report'),
+      entities:     require('./reports/entity-report'),
+    };
+
+    var REPORTER_MAP = {
+      json: require('./lib/reporters/json-reporter'),
+      txt:  require('./lib/reporters/text-reporter'),
+      md:   require('./lib/reporters/markdown-reporter'),
+    };
+
+    var reporter = REPORTER_MAP[fmtArg] || REPORTER_MAP.json;
+    var ext      = fmtArg === 'md' ? 'md' : (fmtArg === 'txt' ? 'txt' : 'json');
+
+    var toRun = reportArg === 'all' ? Object.keys(REPORT_MAP) : [reportArg];
+    toRun = toRun.filter(function(r) { return REPORT_MAP[r]; });
+
+    if (toRun.length === 0) {
+      console.error('Unknown report type: ' + reportArg + '. Valid: ' + Object.keys(REPORT_MAP).join(', ') + ', all');
+      return;
+    }
+
+    // Ensure output/reports/ directory exists
+    var outDir = path.join(__dirname, 'output', 'reports');
+    if (!fs.existsSync(path.join(__dirname, 'output'))) fs.mkdirSync(path.join(__dirname, 'output'));
+    if (!fs.existsSync(outDir)) fs.mkdirSync(outDir);
+
+    var timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+
+    // Build vol meta once (shared across all reports)
+    var volMeta = null;
+    try {
+      var { messageVolume } = require('./modules/stats/messageVolume');
+      var vol = messageVolume(messages);
+      volMeta = {
+        message_count: messages.length,
+        date_range: vol.dateRange ? { first: vol.dateRange.first, last: vol.dateRange.last } : null,
+      };
+    } catch (e) { /* non-fatal */ }
+
+    toRun.forEach(function(name) {
+      try {
+        var report = REPORT_MAP[name].build(messages);
+        var meta   = Object.assign({ title: name + ' report' }, volMeta);
+        var output;
+
+        if (fmtArg === 'json') {
+          output = reporter.render(report.data, meta);
+        } else {
+          // text and markdown reporters take sections + meta
+          output = reporter.render(report.sections, meta);
+        }
+
+        var filename = name + '-' + timestamp + '.' + ext;
+        var outPath  = path.join(outDir, filename);
+        fs.writeFileSync(outPath, output, 'utf8');
+        console.log('Report written: ' + outPath);
+      } catch (e) {
+        console.error('Failed to generate ' + name + ' report:', e.message);
+      }
+    });
   }
 })();

@@ -1,118 +1,91 @@
 $schema: http://json-schema.org/draft-07/schema#
-type: object
-properties:
-  messages:
-    type: array
-    items:
+type: array
+description: Array of normalized iMessage/SMS message objects
+items:
+  type: object
+  required:
+    - is_from_me
+    - message_text
+    - date
+  properties:
+    _id:
+      type: string
+      description: UUID assigned during cleaning/normalization
+    is_from_me:
+      type: integer
+      enum: [0, 1]
+      description: 1 if the message was sent by the local user, 0 if received
+    message_text:
+      type: string
+      description: Plain text content of the message
+    date:
+      type: string
+      format: date-time
+      description: ISO 8601 date-time the message was sent (UTC)
+    date_read:
+      type: [string, "null"]
+      format: date-time
+      description: ISO 8601 date-time the message was read; null if unread
+    service:
+      type: string
+      enum: [iMessage, SMS]
+      description: Delivery service
+    sender:
+      type: string
+      description: Phone number or email of the sender
+    receiver:
+      type: array
+      items:
+        type: string
+      description: Phone numbers or emails of receivers
+    participants:
+      type: array
+      items:
+        type: string
+      description: All participants in the conversation (sender + all receivers)
+    attachments:
+      type: array
+      items:
+        type: object
+        properties:
+          path:
+            type: string
+            description: File path to the attachment
+          type:
+            type: string
+            description: MIME type of the attachment
+    message_segments:
+      type: array
+      description: Ordered content segments (text, file, reaction)
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: [text, file, reaction]
+          text:
+            type: [string, "null"]
+          file_type:
+            type: [string, "null"]
+          path:
+            type: [string, "null"]
+          reaction_type:
+            type: [string, "null"]
+            description: >
+              One of: loved, liked, disliked, laughed, emphasised, questioned,
+              emoji, sticker, or the removed-* variants
+    sha:
+      type: string
+      description: SHA1 of sender+receiver+date+text+service — stable cross-import unique ID
+    associated_sha:
+      type: [string, "null"]
+      description: SHA1 of the message this reacts to or replies to; null if standalone
+    reply_to_guid:
+      type: [string, "null"]
+      description: GUID of the direct parent message in a thread (iOS 16+)
+    thread_originator_guid:
+      type: [string, "null"]
+      description: GUID of the first message that started the thread (iOS 16+)
+    _debug:
       type: object
-      properties:
-        is_from_me:
-          type: integer
-          description: Indicator of whether the message is from the user (1) or not (0)
-        message_text:
-          type: string
-          description: Text content of the message
-        date:
-          type: string
-          format: date-time
-          description: Date and time the message was sent
-        date_read:
-          type: [string, null]
-          format: date-time
-          description: Date and time the message was read (null if not read)
-        service:
-          type: string
-          description: Service used for the message (e.g., 'imessage')
-        participants:
-          type: array
-          items:
-            type: string
-            description: Phone numbers of participants in the conversation
-          description: List of participants' phone numbers
-        sender:
-          type: string
-          description: Phone number of the sender
-        receiver:
-          type: array
-          items:
-            type: string
-            description: Phone numbers of receivers
-          description: List of receivers' phone numbers
-        attachments:
-          type: array
-          items:
-            type: object
-            properties:
-              path:
-                type: string
-                description: Path to the attachment file
-              type:
-                type: string
-                description: MIME type of the attachment
-            description: Attachment details
-          description: List of attachments
-        message_segments:
-          type: array
-          items:
-            type: object
-            properties:
-              type:
-                type: string
-                description: Type of message segment (e.g., 'text', 'file', 'reaction')
-              text:
-                type: [string, null]
-                description: Text content of the segment (null if not applicable)
-              file_type:
-                type: [string, null]
-                description: File type of the segment (null if not applicable)
-              path:
-                type: [string, null]
-                description: Path to the file (null if not applicable)
-              reaction_type:
-                type: [string, null]
-                description: Type of reaction (null if not applicable)
-            description: Message segment details
-          description: List of message segments
-        _debug:
-          type: object
-          properties:
-            _id:
-              type: string
-              description: Unique identifier for debugging
-            message_id:
-              type: integer
-              description: Message ID
-            message_group:
-              type: integer
-              description: Message group ID
-            message_type:
-              type: string
-              description: Type of message (e.g., 'Individual')
-            me:
-              type: string
-              description: Phone number of the user
-            address:
-              type: string
-              description: Phone number of the sender
-            participants:
-              type: string
-              description: Participants' phone numbers (comma-separated)
-            associated_message_guid:
-              type: [string, null]
-              description: Associated message GUID (null if not applicable)
-          description: Debugging information
-        sha:
-          type: string
-          description: SHA hash of the message
-        associated_sha:
-          type: [string, null]
-          description: SHA hash of the associated message (null if not applicable)
-      required:
-        - is_from_me
-        - message_text
-        - date
-      description: Message object
-    description: Array of messages
-required:
-  - messages
-description: Root object containing messages
+      description: Raw DB values retained for debugging; stripped before analysis

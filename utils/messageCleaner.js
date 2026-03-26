@@ -55,8 +55,15 @@ function cleanMessage(rawMsg) {
     message_text: messageText,
     date: date,
     sender: sender,
+    receiver: Array.isArray(rawMsg.receiver) ? rawMsg.receiver : [],
+    participants: Array.isArray(rawMsg.participants) ? rawMsg.participants : [],
+    service: typeof rawMsg.service === 'string' ? rawMsg.service : null,
     attachments: attachments,
     message_segments: message_segments,
+    sha: typeof rawMsg.sha === 'string' ? rawMsg.sha : null,
+    associated_sha: typeof rawMsg.associated_sha === 'string' ? rawMsg.associated_sha : null,
+    reply_to_guid: rawMsg.reply_to_guid || null,
+    thread_originator_guid: rawMsg.thread_originator_guid || null,
   };
 }
 

@@ -16,7 +16,7 @@ function groupMessagesByInactivity(messages, dateStr, gapHours = 3) {
   // Map messages and parse dateTime
   const msgsWithDate = messages
     .map((msg) => {
-      const dateObj = new Date(msg.dateTime);
+      const dateObj = new Date(msg.date);
       return {
         ...msg,
         dateObj,
@@ -24,15 +24,6 @@ function groupMessagesByInactivity(messages, dateStr, gapHours = 3) {
     })
     .filter((m) => m.dateObj && !isNaN(m.dateObj))
     .sort((a, b) => a.dateObj - b.dateObj);
-
-  // Optional debug during testing
-  if (msgsWithDate.length > 0) {
-    console.log("First message date:", msgsWithDate[0].dateObj);
-    console.log(
-      "Last message date:",
-      msgsWithDate[msgsWithDate.length - 1].dateObj,
-    );
-  }
 
   const conversations = [];
   let currentConvMsgs = [];
