@@ -40,7 +40,7 @@
                   if (version && version > 0) {
                     return loadFromModernOSX(db, version, options);
                   } else {
-                    reject("Couldn't open selected database");
+                    reject("Couldn't open selected database: unable to detect iOS/macOS version (table _SqliteDatabaseProperties or key _ClientVersion not found)");
                   }
                 })
                 .then((messages) => {
@@ -50,12 +50,25 @@
                   db.close();
                 });
             },
-            function (/* reason */) {
-              reject("Couldn't open selected database");
+            function (reason) {
+              var msg = reason && reason.message ? reason.message : String(reason);
+              var hint = "";
+              if (msg.toLowerCase().indexOf("authorization") !== -1 ||
+                  msg.toLowerCase().indexOf("denied") !== -1 ||
+                  msg.toLowerCase().indexOf("not permitted") !== -1 ||
+                  msg.toLowerCase().indexOf("cantopen") !== -1 ||
+                  msg.toLowerCase().indexOf("unable to open") !== -1) {
+                hint = "\nOn macOS, grant Full Disk Access to your terminal: System Settings > Privacy & Security > Full Disk Access";
+              }
+              reject("Couldn't open selected database: " + msg + hint);
             },
           );
         } catch (e) {
-          reject("Couldn't open selected database");
+          var hint = "";
+          if (e.code === "EACCES" || e.code === "EPERM") {
+            hint = "\nOn macOS, grant Full Disk Access to your terminal: System Settings > Privacy & Security > Full Disk Access";
+          }
+          reject("Couldn't open selected database: " + e.message + hint);
         }
       });
 
