@@ -1,15 +1,17 @@
 /**
  * scripts/analyze.js
  *
- * Full analysis pipeline. Runs all 15 analysis features against the message
+ * Full analysis pipeline. Runs all 27 analysis features against the message
  * data and writes JSON, Markdown, and CSV output for each.
  *
- * The TF-IDF family (7 of those features) has been carved out into
- * scripts/tfidf-suite.js, which this script calls into — the same logic
- * also runs standalone via `node scripts/analyze-tfidf.js`, so you don't
- * have to run this full script just to regenerate TF-IDF output. Shared
- * input-loading and JSON/Markdown/CSV-writing helpers live in
- * lib/analyze-shared.js.
+ * The TF-IDF family (7 of those features) and the question-detection family
+ * (8 of those features) have each been carved out into their own suite
+ * script — scripts/tfidf-suite.js and scripts/question-suite.js — which
+ * this script calls into. The same logic also runs standalone via
+ * `node scripts/analyze-tfidf.js` / `node scripts/analyze-questions.js`,
+ * so you don't have to run this full script just to regenerate one
+ * family's output. Shared input-loading and JSON/Markdown/CSV-writing
+ * helpers live in lib/analyze-shared.js.
  *
  * Usage:
  *   node scripts/analyze.js [path/to/data.json]
@@ -28,9 +30,9 @@
 // ── Infrastructure ────────────────────────────────────────────────────────────
 var { loadContext, saveReport, makeMeta, OUTPUT_DIR, REPORTS_DIR } = require('../lib/analyze-shared');
 var { runTfidfSuite }                     = require('./tfidf-suite');
+var { runQuestionSuite }                  = require('./question-suite');
 
 // ── New analysis modules ──────────────────────────────────────────────────────
-var { detectQuestions }    = require('../modules/nlp/questionDetector');
 var { mapReactions }       = require('../modules/nlp/reactionMapper');
 var { reconstructThreads } = require('../modules/nlp/threadReconstructor');
 var { sentimentArcs }      = require('../modules/nlp/sentimentArc');
@@ -49,7 +51,6 @@ var { timeOfDay }          = require('../modules/stats/timeOfDay');
 var { dayOfWeek }          = require('../modules/stats/dayOfWeek');
 
 // ── Report builders ───────────────────────────────────────────────────────────
-var questionReport      = require('../reports/question-report');
 var reactionReport      = require('../reports/reaction-report');
 var threadReport        = require('../reports/thread-report');
 var turnTakingReport    = require('../reports/turn-taking-report');
@@ -87,31 +88,17 @@ async function main() {
 
   // ── Step 3: Run each analysis ─────────────────────────────────────────────
 
-  // 1. Question Detection
-  console.log('Running: question detection...');
-  var qResult    = detectQuestions(simplified, conversations);
-  var qReport    = questionReport.build(qResult);
-  var allQuestions = [];
-  Object.keys(qResult.bySender || {}).forEach(function(sender) {
-    (qResult.bySender[sender] || []).forEach(function(q) {
-      allQuestions.push({
-        sender:         sender,
-        date:           q.date ? q.date.slice(0, 10) : '',
-        time:           q.time || '',
-        conversationId: q.conversationId != null ? q.conversationId : '',
-        participants:   (q.participants || []).join('; '),
-        question:       q.message_text || '',
-        following_1:    q.followingMessages[0] ? (q.followingMessages[0].sender + ': ' + q.followingMessages[0].message_text) : '',
-        following_2:    q.followingMessages[1] ? (q.followingMessages[1].sender + ': ' + q.followingMessages[1].message_text) : '',
-        following_3:    q.followingMessages[2] ? (q.followingMessages[2].sender + ': ' + q.followingMessages[2].message_text) : '',
-      });
-    });
+  // 1. Question suite (detection, type classification, answer pairing,
+  //    unanswered questions, response time, rhetorical detection, initiation
+  //    stats, topic tagging — see scripts/question-suite.js)
+  console.log('Running: question suite...');
+  var questionWritten = runQuestionSuite({
+    simplified:    simplified,
+    conversations: conversations,
+    msgCount:      msgCount,
+    dateRange:     dateRange,
   });
-  saveReport('question-detection', qResult, qReport.sections, makeMeta('Question Detection', msgCount, dateRange), function() {
-    return [{ filename: 'question-detection', rows: allQuestions,
-      headers: ['sender','date','time','conversationId','participants','question','following_1','following_2','following_3'] }];
-  });
-  written.push('question-detection');
+  questionWritten.forEach(function(name) { written.push(name); });
 
   // 2. Reaction Mapping
   console.log('Running: reaction mapping...');

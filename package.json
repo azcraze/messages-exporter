@@ -8,6 +8,7 @@
     "analyze": "node main.js system",
     "analyze:full": "node scripts/analyze.js",
     "analyze:tfidf": "node scripts/analyze-tfidf.js",
+    "analyze:questions": "node scripts/analyze-questions.js",
     "run": "node run.js",
     "test": "mocha --timeout 90000 'test/**/*.test.js'"
   },
