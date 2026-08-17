@@ -23,7 +23,7 @@ function filterGroupedConversations(
     .map((convo) => {
       const dateStr =
         convo.conversationMsgs.length > 0
-          ? convo.conversationMsgs[0].dateTime
+          ? convo.conversationMsgs[0].date
           : null;
       const dateObj = dateStr ? new Date(dateStr) : null;
 
