@@ -169,6 +169,36 @@
 
 ---
 
+## Epic 9 — TF-IDF Module Family Expansion ✅
+
+> Expand the single per-sender `modules/nlp/tfidf.js` into a family of
+> analyses built on the same `natural.TfIdf` library and method (group texts
+> into documents → build corpus → rank/compare terms). No new npm
+> dependencies. Also carves the TF-IDF family out of the monolithic
+> `scripts/analyze.js` into a standalone, independently-runnable suite —
+> the first feature family to follow this pattern; later families can reuse
+> `lib/analyze-shared.js` the same way.
+
+| # | Task | Status |
+|---|------|--------|
+| 9.1 | Create `lib/tfidf-corpus.js` — shared corpus-building/ranking/similarity helper (`buildCorpus`, `rankTerms`, `getVector`, `cosineSimilarity`) | ✅ |
+| 9.2 | Refactor `modules/nlp/tfidf.js` to delegate to `lib/tfidf-corpus.js` (behavior-preserving) | ✅ |
+| 9.3 | Create `modules/nlp/tfidfByConversation.js` — distinctive terms per conversation | ✅ |
+| 9.4 | Create `modules/nlp/tfidfByPeriod.js` — distinctive terms per day/week/month | ✅ |
+| 9.5 | Create `modules/nlp/tfidfSimilarity.js` — pairwise cosine similarity between senders/conversations/custom groups | ✅ |
+| 9.6 | Create `modules/nlp/tfidfKeywordTags.js` — per-message keyword tagging against the whole-corpus IDF | ✅ |
+| 9.7 | Create `modules/nlp/tfidfDrift.js` — wraps `tfidfByPeriod`, diffs consecutive periods for rising/falling vocabulary | ✅ |
+| 9.8 | Create `modules/nlp/tfidfSearch.js` — TF-IDF relevance search via `natural.TfIdf.tfidfs()`, distinct from `fuzzySearch.js` | ✅ |
+| 9.9 | Add companion reports for all 6 new modules under `reports/tfidf-*-report.js` | ✅ |
+| 9.10 | Create `lib/analyze-shared.js` — extract `saveReport`/`makeMeta`/`loadContext` out of `scripts/analyze.js` | ✅ |
+| 9.11 | Create `scripts/tfidf-suite.js` — `runTfidfSuite(ctx, opts)` runs all 7 TF-IDF features | ✅ |
+| 9.12 | Create `scripts/analyze-tfidf.js` — standalone entry point (`node scripts/analyze-tfidf.js [path] [--query]`) | ✅ |
+| 9.13 | Update `scripts/analyze.js` to use `lib/analyze-shared.js` + `runTfidfSuite()` instead of inline TF-IDF logic | ✅ |
+| 9.14 | Add `analyze:tfidf` and `analyze:full` npm scripts | ✅ |
+| 9.15 | Add tests: `test/lib/tfidf-corpus.test.js` + one `test/modules/nlp/tfidf*.test.js` per module (including the previously-untested `tfidf.js`) | ✅ |
+
+---
+
 ## Dependency additions across epics
 
 | Package | Version | Added in |
