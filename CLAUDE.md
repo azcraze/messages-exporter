@@ -110,7 +110,7 @@ node run.js   # reads ./data/data.json, writes ./output/
 | `-f, --search <text>` | Full-text search filter |
 | `-p, --phone <number>` | Filter by participant phone number |
 | `-t, --test` | Validation/test mode |
-| `-w, --save` | Write output to file |
+| `-w, --save [path]` | Write output to file. Optional path (default `data/data.json`), resolved relative to cwd |
 
 ---
 
@@ -230,6 +230,12 @@ When adding tests, follow the Mocha + Chai pattern and use `chai-as-promised` fo
 5. **No environment variables** — all configuration is via CLI flags. There is no `.env` support.
 
 6. **`output/` and `data/data.json` are gitignored** — do not try to commit processed data files.
+
+7. **macOS Full Disk Access** — reading `~/Library/Messages/chat.db` directly requires the
+   terminal app running `node` to have Full Disk Access granted (System Settings → Privacy
+   & Security → Full Disk Access). Without it, `openDB()` fails even for a correct, existing
+   path; `index.js` detects this on `process.platform === 'darwin'` and surfaces a hint in
+   the error message rather than the raw sqlite3 error.
 
 ---
 

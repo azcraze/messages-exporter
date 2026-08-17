@@ -1,7 +1,7 @@
 /**
  * modules/nlp/tfidf.js
  *
- * TF-IDF analysis using natural.TfIdf.
+ * TF-IDF analysis using natural.TfIdf (via lib/tfidf-corpus.js).
  * Each sender's messages are treated as a single document.
  * Returns the top N terms per sender ranked by TF-IDF score.
  *
@@ -13,9 +13,8 @@
  *   topN      {number}  terms to return per sender (default 20)
  */
 
-var natural   = require('natural');
-var _         = require('lodash');
-var engine    = require('../../lib/nlp-engine');
+var _      = require('lodash');
+var corpus = require('../../lib/tfidf-corpus');
 
 /**
  * @param {Array<Object>} messages
@@ -36,34 +35,19 @@ function computeTfIdf(messages, opts) {
   var senders = Object.keys(grouped);
   if (senders.length === 0) return { bySender: {} };
 
-  // Build one TfIdf instance with one document per sender
-  var tfidf = new natural.TfIdf();
-
-  senders.forEach(function(sender) {
+  // Build one corpus with one document per sender
+  var docs = senders.map(function(sender) {
     var text = grouped[sender]
       .map(function(m) { return m.message_text || ''; })
       .join(' ');
-    tfidf.addDocument(text);
+    return { id: sender, text: text };
   });
 
+  var built = corpus.buildCorpus(docs);
+
   var bySender = {};
-
   senders.forEach(function(sender, idx) {
-    var terms = [];
-
-    tfidf.listTerms(idx).forEach(function(item) {
-      // Skip stop words and very short tokens
-      var t = item.term;
-      if (!t || t.length < 3) return;
-      if (engine.STOP_WORDS.has(t.toLowerCase())) return;
-      terms.push({ term: t, tfidf: parseFloat(item.tfidf.toFixed(4)) });
-    });
-
-    // Sort by tfidf descending, take topN, assign rank
-    terms.sort(function(a, b) { return b.tfidf - a.tfidf; });
-    bySender[sender] = terms.slice(0, topN).map(function(t, i) {
-      return { rank: i + 1, term: t.term, tfidf: t.tfidf };
-    });
+    bySender[sender] = corpus.rankTerms(built.tfidf, idx, { topN: topN });
   });
 
   return { bySender: bySender };

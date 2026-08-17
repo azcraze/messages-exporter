@@ -4,6 +4,13 @@
  * Full analysis pipeline. Runs all 15 analysis features against the message
  * data and writes JSON, Markdown, and CSV output for each.
  *
+ * The TF-IDF family (7 of those features) has been carved out into
+ * scripts/tfidf-suite.js, which this script calls into — the same logic
+ * also runs standalone via `node scripts/analyze-tfidf.js`, so you don't
+ * have to run this full script just to regenerate TF-IDF output. Shared
+ * input-loading and JSON/Markdown/CSV-writing helpers live in
+ * lib/analyze-shared.js.
+ *
  * Usage:
  *   node scripts/analyze.js [path/to/data.json]
  *
@@ -18,16 +25,9 @@
 
 'use strict';
 
-var path = require('path');
-var fs   = require('fs');
-
 // ── Infrastructure ────────────────────────────────────────────────────────────
-var { readJsonFile, saveJSON, ensureDir }   = require('../utils/fileIO');
-var { toCsv, saveCSV }                     = require('../utils/csvWriter');
-var { render: mdRender }                   = require('../lib/reporters/markdown-reporter');
-var { runPipeline }                        = require('../lib/pipeline');
-var { groupMessagesByInactivity }          = require('../modules/groupConversationsByTime');
-var { format }                             = require('../utils/dateHelpers');
+var { loadContext, saveReport, makeMeta, OUTPUT_DIR, REPORTS_DIR } = require('../lib/analyze-shared');
+var { runTfidfSuite }                     = require('./tfidf-suite');
 
 // ── New analysis modules ──────────────────────────────────────────────────────
 var { detectQuestions }    = require('../modules/nlp/questionDetector');
@@ -37,7 +37,6 @@ var { sentimentArcs }      = require('../modules/nlp/sentimentArc');
 var { detectToneDrift }    = require('../modules/nlp/toneDrift');
 var { perSenderPhrases }   = require('../modules/nlp/perSenderPhrases');
 var { groupPhrases }       = require('../modules/nlp/phraseGrouping');
-var { computeTfIdf }       = require('../modules/nlp/tfidf');
 var { analyzeCurseWords }  = require('../modules/nlp/curseWords');
 var { analyzeTurnTaking }  = require('../modules/stats/turnTaking');
 
@@ -56,7 +55,6 @@ var threadReport        = require('../reports/thread-report');
 var turnTakingReport    = require('../reports/turn-taking-report');
 var convLengthReport    = require('../reports/conversation-length-report');
 var msgVolumeReport     = require('../reports/message-volume-report');
-var tfidfReport         = require('../reports/tfidf-report');
 var phrasePatternsReport = require('../reports/phrase-patterns-report');
 var phraseGroupingReport = require('../reports/phrase-grouping-report');
 var sentimentArcReport  = require('../reports/sentiment-arc-report');
@@ -65,128 +63,24 @@ var commPatternsReport  = require('../reports/communication-patterns-report');
 var emojiReport         = require('../reports/emoji-report');
 var curseWordsReport    = require('../reports/curse-words-report');
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-var OUTPUT_DIR  = './output';
-var REPORTS_DIR = './output/reports';
-
-/**
- * Save a report: JSON data + Markdown + CSV(s).
- * @param {string}   name       — base filename without extension
- * @param {Object}   data       — raw JSON data
- * @param {Array}    sections   — markdown-reporter sections
- * @param {Object}   meta       — markdown report metadata
- * @param {Function} csvFn      — function(data) → Array<{ filename, rows, headers }>
- */
-function saveReport(name, data, sections, meta, csvFn) {
-  // JSON
-  saveJSON(data, name + '.json', OUTPUT_DIR);
-
-  // Markdown
-  var md = mdRender(sections, meta);
-  ensureDir(REPORTS_DIR);
-  fs.writeFileSync(path.join(REPORTS_DIR, name + '.md'), md, 'utf8');
-
-  // CSV(s)
-  if (typeof csvFn === 'function') {
-    var csvOutputs = csvFn(data);
-    (csvOutputs || []).forEach(function(out) {
-      if (!out || !out.rows || out.rows.length === 0) return;
-      var csv = toCsv(out.rows, out.headers);
-      if (csv) saveCSV(csv, (out.filename || name) + '.csv', REPORTS_DIR);
-    });
-  }
-}
-
-function makeMeta(title, messageCount, dateRange) {
-  return {
-    title:         title,
-    message_count: messageCount,
-    date_range:    dateRange || null,
-    generated_at:  new Date().toISOString().slice(0, 19).replace('T', ' '),
-  };
-}
-
-// ── Conversations with IDs ────────────────────────────────────────────────────
-/**
- * Re-derive conversations over the full stream (no per-day bucketing)
- * so conversations spanning midnight are not split, and each gets a stable
- * conversationId.
- */
-function buildConversationsWithIds(simplified) {
-  var msgs = simplified.map(function(msg) {
-    return {
-      _id:             msg._id,
-      from:            msg.sender || (msg.is_from_me === 1 ? 'me' : 'other'),
-      date:            msg.date,
-      message_text:    msg.message_text,
-      attachments:     msg.attachments,
-      participants:    msg.participants,
-      is_from_me:      msg.is_from_me,
-      message_segments: msg.message_segments,
-      sha:             msg.sha,
-      associated_sha:  msg.associated_sha,
-      reply_to_guid:   msg.reply_to_guid,
-      thread_originator_guid: msg.thread_originator_guid,
-    };
-  });
-
-  var grouped = groupMessagesByInactivity(msgs, null);
-
-  return grouped.conversations.map(function(convo, index) {
-    var firstMsg = convo.conversationMsgs[0];
-    var dateStr  = firstMsg && firstMsg.date && firstMsg.date !== 'Unknown Date'
-      ? format(new Date(firstMsg.date), 'EEE, MMM dd, yyyy')
-      : 'Unknown Date';
-
-    // Derive participants from senders
-    var senderSet = {};
-    convo.conversationMsgs.forEach(function(m) {
-      var s = m.from || m.sender || (m.is_from_me === 1 ? 'me' : 'other');
-      senderSet[s] = true;
-    });
-
-    return {
-      conversationId:   index,
-      date:             dateStr,
-      participants:     Object.keys(senderSet),
-      conversationMsgs: convo.conversationMsgs,
-      messageCount:     convo.conversationMsgs.length,
-    };
-  });
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
   var inputPath = process.argv[2] || './data/data.json';
 
-  var rawMessages;
+  var ctx;
   try {
-    rawMessages = readJsonFile(inputPath);
+    ctx = loadContext(inputPath);
   } catch (e) {
     console.error('Could not read ' + inputPath + ':', e.message);
     process.exit(1);
   }
-  console.log('Loaded ' + rawMessages.length + ' raw messages from ' + inputPath);
 
-  // ── Step 1: Base pipeline ─────────────────────────────────────────────────
-  var pipeResult  = runPipeline(rawMessages);
-  var simplified  = pipeResult.simplified;
-  var dateRange   = null;
+  var simplified    = ctx.simplified;
+  var conversations = ctx.conversations;
+  var msgCount       = ctx.msgCount;
+  var dateRange       = ctx.dateRange;
 
-  if (simplified.length > 0) {
-    var dates = simplified
-      .map(function(m) { return m.date; })
-      .filter(function(d) { return d && d !== 'Unknown Date'; })
-      .sort();
-    if (dates.length > 0) dateRange = { first: dates[0], last: dates[dates.length - 1] };
-  }
-
-  var msgCount = simplified.length;
-  console.log('Simplified messages: ' + msgCount);
-
-  // ── Step 2: Conversations with stable IDs ─────────────────────────────────
-  var conversations = buildConversationsWithIds(simplified);
+  console.log('Loaded ' + msgCount + ' simplified messages from ' + inputPath);
   console.log('Conversations: ' + conversations.length);
 
   var written = [];
@@ -304,20 +198,18 @@ async function main() {
   });
   written.push('conversation-length');
 
-  // 7. TF-IDF
-  console.log('Running: TF-IDF...');
-  var tfidfResult = computeTfIdf(simplified);
-  var tfidfRpt    = tfidfReport.build(tfidfResult);
-  saveReport('tfidf', tfidfResult, tfidfRpt.sections, makeMeta('TF-IDF Distinctive Terms', msgCount, dateRange), function(d) {
-    var rows = [];
-    Object.keys(d.bySender || {}).forEach(function(sender) {
-      (d.bySender[sender] || []).forEach(function(t) {
-        rows.push({ sender: sender, rank: t.rank, term: t.term, tfidf: t.tfidf });
-      });
-    });
-    return [{ filename: 'tfidf', rows: rows, headers: ['sender','rank','term','tfidf'] }];
+  // 7. TF-IDF suite (per sender, per conversation, per period, similarity,
+  //    keyword tags, drift — see scripts/tfidf-suite.js. Relevance search is
+  //    skipped here since it needs a --query; use scripts/analyze-tfidf.js
+  //    directly for that.)
+  console.log('Running: TF-IDF suite...');
+  var tfidfWritten = runTfidfSuite({
+    simplified:    simplified,
+    conversations: conversations,
+    msgCount:      msgCount,
+    dateRange:     dateRange,
   });
-  written.push('tfidf');
+  tfidfWritten.forEach(function(name) { written.push(name); });
 
   // 8. Per-Sender Phrase Patterns
   console.log('Running: per-sender phrase patterns...');

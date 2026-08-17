@@ -10,6 +10,7 @@
   var loadFromModernOSX = require("./lib/load-from-modern-osx");
   var openDB = require("./lib/open-db");
   var bfj = require("bfj");
+  var { ensureDir } = require("./utils/fileIO");
 
   let exporter = {
     importData: function (filePath, options) {
@@ -29,7 +30,8 @@
           } else if (fs.lstatSync(filePath).isFile()) {
             dbPath = filePath;
           } else {
-            reject("Couldn't open selected database");
+            reject("Not a file or directory: " + filePath);
+            return;
           }
 
           openDB(dbPath).then(
@@ -40,7 +42,12 @@
                   if (version && version > 0) {
                     return loadFromModernOSX(db, version, options);
                   } else {
-                    reject("Couldn't open selected database");
+                    reject(
+                      "Opened the database but couldn't detect a supported iMessage schema " +
+                        "(no _ClientVersion found). Is " +
+                        dbPath +
+                        " a valid chat.db?",
+                    );
                   }
                 })
                 .then((messages) => {
@@ -50,12 +57,28 @@
                   db.close();
                 });
             },
-            function (/* reason */) {
-              reject("Couldn't open selected database");
+            function (err) {
+              var message =
+                "Couldn't open the database at " +
+                dbPath +
+                (err && err.message ? " (" + err.message + ")" : "") +
+                ".";
+              if (process.platform === "darwin") {
+                message +=
+                  "\nOn macOS this is usually caused by missing Full Disk Access permission. " +
+                  "Grant it via System Settings → Privacy & Security → Full Disk Access, " +
+                  "add your terminal app (Terminal/iTerm2/etc.), then restart it and try again.";
+              }
+              reject(message);
             },
           );
         } catch (e) {
-          reject("Couldn't open selected database");
+          reject(
+            e && e.code === "ENOENT"
+              ? "File not found: " + filePath
+              : "Couldn't open selected database" +
+                  (e && e.message ? ": " + e.message : ""),
+          );
         }
       });
 
@@ -64,6 +87,14 @@
   };
 
   module.exports = { importData: exporter.importData };
+
+  // Resolves the -w/--save option to an output path: a string value is
+  // resolved relative to the caller's cwd; no value (boolean true) falls
+  // back to the existing default location.
+  function resolveSavePath(saveOption) {
+    if (typeof saveOption === "string") return path.resolve(saveOption);
+    return path.join(__dirname, "data", "data.json");
+  }
 
   if (!module.parent) {
     const program = require("commander");
@@ -129,9 +160,7 @@
     if (options.phone)
       console.log(`only getting to/from ${options.phone}`);
     if (options.save)
-      console.log(
-        `writing to ${path.join(__dirname, "data.json").toString()}`,
-      );
+      console.log(`writing to ${resolveSavePath(options.save)}`);
 
     options.showProgress = true; // don't do this for when using this not on the command line
 
@@ -161,7 +190,8 @@
       })
       .then((data) => {
         if (options.save) {
-          let outPath = path.join(__dirname, "data", "data.json").toString();
+          let outPath = resolveSavePath(options.save);
+          ensureDir(path.dirname(outPath));
           bfj
             .write(outPath, data, { space: 4 })
             .then(() => {
@@ -178,6 +208,10 @@
         if (options.report) {
           generateReports(data, options);
         }
+      })
+      .catch((err) => {
+        console.error(err && err.message ? err.message : err);
+        process.exit(1);
       });
   }
 
