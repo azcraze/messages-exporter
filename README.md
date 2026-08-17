@@ -9,6 +9,7 @@ A Node.js CLI tool that reads Apple iMessage/SMS data from iOS SQLite backup dat
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [CLI Reference](#cli-reference)
+- [Troubleshooting](#troubleshooting)
 - [Data Flow](#data-flow)
 - [Entry Points](#entry-points)
 - [Library (`lib/`)](#library-lib)
@@ -59,7 +60,7 @@ node run.js
 | `-f, --search <text>` | Full-text search across `message_text` and `attributedBody` |
 | `-p, --phone <number>` | Filter by participant phone number |
 | `-t, --test` | Validation/test mode |
-| `-w, --save` | Write output to file |
+| `-w, --save [path]` | Write output to file. Optional path (default `data/data.json`), resolved relative to your current directory |
 
 **npm scripts:**
 
@@ -69,6 +70,31 @@ node run.js
 | `npm run analyze` | Runs the full live-import + analysis pipeline (`main.js`) |
 | `npm run run` | Reprocesses from a previously saved `data/data.json` (`run.js`) |
 | `npm test` | Runs the Mocha test suite |
+
+---
+
+## Troubleshooting
+
+**`Couldn't open the database at ~/Library/Messages/chat.db ...` (macOS)**
+
+macOS protects `~/Library/Messages` behind its Full Disk Access privacy
+control — even a correct path and valid file will fail to open if the
+terminal application running `node` hasn't been granted access. To fix:
+
+1. Open **System Settings → Privacy & Security → Full Disk Access**.
+2. Enable the toggle for your terminal app (Terminal, iTerm2, VS Code, etc.).
+3. Restart that terminal application completely and re-run the command.
+
+**`File not found: <path>`**
+
+The path passed as the first argument doesn't exist. Use `system` as the
+path to default to `~/Library/Messages/chat.db`, or double-check the path to
+your iOS backup directory.
+
+**`Opened the database but couldn't detect a supported iMessage schema...`**
+
+The file opened successfully but isn't a recognizable `chat.db` — it may be
+empty, corrupted, or from an unsupported source.
 
 ---
 
