@@ -199,6 +199,46 @@
 
 ---
 
+## Epic 10 — Question Detector Module Family Expansion ⬜
+
+> Expand the single `modules/nlp/questionDetector.js` (boolean `isQuestion()` +
+> "next 3 messages" context) into a family of analyses, following the same
+> pattern Epic 9 used for TF-IDF: pull the reusable core into a shared
+> `lib/` helper, refactor the original module to delegate to it, then build
+> sibling modules on top. No new npm dependencies — everything is built on
+> `natural`/`compromise` (already installed) plus data already available on
+> each message (`reply_to_guid`, `thread_originator_guid`, `date`, `sender`).
+> Reuses `lib/tfidf-corpus.js` for topic tagging instead of re-implementing
+> corpus/ranking logic.
+>
+> **Why these modules:** `questionDetector.js` currently answers one
+> question — "is this a question, and what came right after it?" — with a
+> boolean regex-ish check and a positional 3-message window. That window is
+> a poor proxy for "was this actually answered, by whom, how fast, and was
+> it even a real question in the first place (vs. rhetorical: `"why me?"`)."
+> Each new module below answers one of those follow-up questions, reusing
+> the same classification core rather than re-deriving it.
+
+| # | Task | Status |
+|---|------|--------|
+| 10.1 | Create `lib/question-analysis.js` — shared core: `classifyQuestion(text)` → `{ isQuestion, type, confidence }` (types: `wh`, `yes-no`, `tag`, `choice`, `rhetorical-cue`), `linkConversationContext(simplified, conversations)` → per-message `{ conversationId, participants, indexInConvo, convoMsgs }` lookup (extracted from `questionDetector.js`'s inline `msgMeta` builder), `resolveSender(msg)` | ⬜ |
+| 10.2 | Refactor `modules/nlp/questionDetector.js` to delegate to `lib/question-analysis.js` (behavior-preserving — same `detectQuestions()` return shape) | ⬜ |
+| 10.3 | Create `modules/nlp/questionTypeClassifier.js` — applies `classifyQuestion()` across all messages, returns type distribution overall and per sender (wh vs. yes-no vs. tag vs. choice ratios) | ⬜ |
+| 10.4 | Create `modules/nlp/questionAnswerPairing.js` — pairs each detected question with its best-guess answer: prefers `reply_to_guid`/`thread_originator_guid` links (same grouping approach as `threadReconstructor.js`) when present, else falls back to the first following message from a *different* sender within a configurable message/time window | ⬜ |
+| 10.5 | Create `modules/nlp/unansweredQuestions.js` — filters `questionAnswerPairing` output to questions with no paired answer (dropped, ignored, or conversation ended); grouped by sender and by conversation | ⬜ |
+| 10.6 | Create `modules/nlp/questionResponseTime.js` — median/mean latency between a question and its paired answer (from 10.4), per sender-pair and overall, using `utils/dateHelpers.js` for diffs (distinct from the general-purpose `modules/stats/responseTime.js`, which isn't question-aware) | ⬜ |
+| 10.7 | Create `modules/nlp/rhetoricalQuestionDetector.js` — heuristic layer on `classifyQuestion()`'s `rhetorical-cue` type: flags self-answered questions (question + answer in the same message), common rhetorical phrasings, and questions that are habitually unanswered across the whole corpus — used to reduce false positives in 10.5 | ⬜ |
+| 10.8 | Create `modules/nlp/questionInitiationStats.js` — per participant: questions asked, questions answered when asked of them, ask/answer ratio, "curiosity index" (questions asked ÷ total messages sent) | ⬜ |
+| 10.9 | Create `modules/nlp/questionTopics.js` — tags each detected question with distinctive terms via `lib/tfidf-corpus.js` (`buildCorpus`/`rankTerms`, one "document" per question) and clusters similar questions via `cosineSimilarity` — reuses Epic 9's shared TF-IDF helper rather than duplicating it | ⬜ |
+| 10.10 | Add companion reports `reports/question-type-report.js`, `reports/question-pairing-report.js`, `reports/unanswered-questions-report.js`, `reports/question-response-time-report.js`, `reports/rhetorical-questions-report.js`, `reports/question-initiation-report.js`, `reports/question-topics-report.js` (one per 10.3–10.9, following the existing `question-report.js` structure) | ⬜ |
+| 10.11 | Create `scripts/question-suite.js` — `runQuestionSuite(ctx, opts)` runs all 8 question-family features (10.2's `detectQuestions` + 10.3–10.9) against a shared `ctx`, mirroring `scripts/tfidf-suite.js` | ⬜ |
+| 10.12 | Create `scripts/analyze-questions.js` — standalone entry point (`node scripts/analyze-questions.js [path]`), mirroring `scripts/analyze-tfidf.js` | ⬜ |
+| 10.13 | Update `scripts/analyze.js` to replace its inline question-detection block with a call into `runQuestionSuite()` | ⬜ |
+| 10.14 | Add `analyze:questions` npm script | ⬜ |
+| 10.15 | Add tests: `test/lib/question-analysis.test.js` + one `test/modules/nlp/question*.test.js` / `rhetoricalQuestionDetector.test.js` per new module (10.3–10.9), covering known question/non-question/rhetorical/unanswered fixtures | ⬜ |
+
+---
+
 ## Dependency additions across epics
 
 | Package | Version | Added in |
